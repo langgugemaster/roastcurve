@@ -4,7 +4,8 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { Roast, formatTime, formatDate } from "../types/models";
+import { Roast, CuppingRecord, formatTime, formatDate } from "../types/models";
+import { CuppingForm } from "./CuppingForm";
 
 interface Props {
   roastId: string;
@@ -15,6 +16,7 @@ export function RoastDetailView({ roastId, onBack }: Props) {
   const [roast, setRoast] = useState<Roast | null>(null);
   const [showRor, setShowRor] = useState(true);
   const [showEnv, setShowEnv] = useState(true);
+  const [showCupping, setShowCupping] = useState(false);
 
   useEffect(() => {
     invoke<Roast | null>("get_roast", { id: roastId })
@@ -26,6 +28,62 @@ export function RoastDetailView({ roastId, onBack }: Props) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
         <span className="text-muted">加载中...</span>
+      </div>
+    );
+  }
+
+  // Handle cupping save
+  async function handleCuppingSave(record: CuppingRecord) {
+    if (!roast) return;
+    const total = record.fragrance + record.flavor + record.aftertaste + record.acidity +
+      record.body + record.uniformity + record.balance + record.clean_cup +
+      record.sweetness + record.overall - record.defects;
+    const updated: Roast = { ...roast, cupping_record: record, cupping_score: total };
+    try {
+      await invoke("save_roast", { roast: updated });
+      setRoast(updated);
+      setShowCupping(false);
+    } catch (e) {
+      console.error("Save cupping failed:", e);
+    }
+  }
+
+  // Export as JSON
+  function exportJson() {
+    if (!roast) return;
+    const blob = new Blob([JSON.stringify(roast, null, 2)], { type: "application/json" });
+    downloadBlob(blob, `${roast.bean_name}_${roast.date.slice(0, 10)}.json`);
+  }
+
+  // Export as CSV
+  function exportCsv() {
+    if (!roast || roast.curve_data.length === 0) return;
+    const header = "Time(s),BeanTemp(℃),EnvTemp(℃),RoR(℃/min),Gas,Airflow\n";
+    const rows = roast.curve_data.map(p =>
+      `${p.time.toFixed(1)},${p.bean_temp.toFixed(1)},${p.env_temp.toFixed(1)},${p.ror.toFixed(1)},${p.gas},${p.airflow}`
+    ).join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    downloadBlob(blob, `${roast.bean_name}_${roast.date.slice(0, 10)}.csv`);
+  }
+
+  // If showing cupping form, replace main content
+  if (showCupping) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: "var(--md)",
+          padding: "var(--sm) var(--md)", borderBottom: "0.5px solid var(--panel-border)",
+        }}>
+          <button className="btn-ghost" onClick={() => setShowCupping(false)}>← 返回详情</button>
+          <span className="font-heading">{roast.bean_name}</span>
+        </div>
+        <div style={{ flex: 1, overflow: "auto", padding: "var(--lg)" }}>
+          <CuppingForm
+            initial={roast.cupping_record}
+            onSave={handleCuppingSave}
+            onCancel={() => setShowCupping(false)}
+          />
+        </div>
       </div>
     );
   }
@@ -48,6 +106,11 @@ export function RoastDetailView({ roastId, onBack }: Props) {
           </span>
         )}
         <div style={{ flex: 1 }} />
+        <button className="btn-copper" onClick={() => setShowCupping(true)}>
+          {roast.cupping_record ? "编辑杯测" : "SCA 杯测"}
+        </button>
+        <button className="btn-ghost" onClick={exportJson}>导出 JSON</button>
+        {hasChart && <button className="btn-ghost" onClick={exportCsv}>导出 CSV</button>}
         <span className="font-label-sm text-muted">{formatDate(roast.date)}</span>
       </div>
 
@@ -101,7 +164,6 @@ export function RoastDetailView({ roastId, onBack }: Props) {
 
           {/* Events & Cupping */}
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--lg)" }}>
-            {/* Events */}
             {events.length > 0 && (
               <div style={{ background: "var(--surface)", border: "0.5px solid var(--panel-border)", padding: "var(--md)" }}>
                 <div className="font-label" style={{ marginBottom: "var(--sm)" }}>事件记录</div>
@@ -117,7 +179,6 @@ export function RoastDetailView({ roastId, onBack }: Props) {
               </div>
             )}
 
-            {/* Cupping */}
             {roast.cupping_record && (
               <div style={{ background: "var(--surface)", border: "0.5px solid var(--panel-border)", padding: "var(--md)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--sm)" }}>
@@ -135,7 +196,6 @@ export function RoastDetailView({ roastId, onBack }: Props) {
               </div>
             )}
 
-            {/* Tags */}
             {roast.tags.length > 0 && (
               <div style={{ background: "var(--surface)", border: "0.5px solid var(--panel-border)", padding: "var(--md)" }}>
                 <div className="font-label" style={{ marginBottom: "var(--sm)" }}>标签</div>
@@ -147,7 +207,6 @@ export function RoastDetailView({ roastId, onBack }: Props) {
           </div>
         </div>
 
-        {/* Notes */}
         {roast.notes && (
           <div style={{ background: "var(--surface)", border: "0.5px solid var(--panel-border)", padding: "var(--md)", marginTop: "var(--lg)" }}>
             <div className="font-label" style={{ marginBottom: "var(--sm)" }}>备注</div>
@@ -157,6 +216,15 @@ export function RoastDetailView({ roastId, onBack }: Props) {
       </div>
     </div>
   );
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function InfoGrid({ children }: { children: React.ReactNode }) {

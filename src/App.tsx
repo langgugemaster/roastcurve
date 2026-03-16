@@ -5,6 +5,7 @@ import { StatsView } from "./components/StatsView";
 import { ComparisonView } from "./components/ComparisonView";
 import { InventoryView } from "./components/InventoryView";
 import { RoastDetailView } from "./components/RoastDetailView";
+import { RoastDashboard } from "./components/RoastDashboard";
 
 type Tab = "烘焙" | "历史" | "对比" | "统计" | "库存" | "设置";
 
@@ -42,7 +43,7 @@ function App() {
         {activeTab === "统计" && <StatsView />}
         {activeTab === "对比" && <ComparisonView />}
         {activeTab === "库存" && <InventoryView />}
-        {activeTab === "烘焙" && <Placeholder text="烘焙面板 — 待实现" />}
+        {activeTab === "烘焙" && <RoastDashboard />}
       </main>
     </div>
   );
@@ -110,24 +111,6 @@ function Header({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (t: T
 
       <div style={{ flex: 1 }} />
     </header>
-  );
-}
-
-function Placeholder({ text }: { text: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        color: "var(--text-muted)",
-        fontSize: 16,
-        fontWeight: 500,
-      }}
-    >
-      {text}
-    </div>
   );
 }
 
