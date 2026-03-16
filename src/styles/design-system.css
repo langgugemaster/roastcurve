@@ -1,0 +1,178 @@
+/* ═══════════════════════════════════════════════
+   RoastCurve Design System
+   建构式主义 — 直角、铜色、克制
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand ── */
+  --copper: #C4704B;
+  --copper-light: #D4906B;
+  --copper-muted: rgba(196, 112, 75, 0.12);
+  --copper-deep: #A85A3A;
+
+  /* ── Surface ── */
+  --bg: #FAF9F7;
+  --surface: #FFFFFF;
+  --panel-hover: #F5F3EF;
+  --panel-border: #E8E5DE;
+  --panel-border-strong: #D6D3CC;
+
+  /* ── Primary (Charcoal) ── */
+  --primary: #2C2C2C;
+  --primary-hover: #3A3A3A;
+  --primary-muted: rgba(44, 44, 44, 0.08);
+
+  /* ── Status ── */
+  --success: #4A7A5B;
+  --warning: #B8860B;
+  --danger: #A04040;
+  --info: #5B7FA5;
+
+  /* ── Curve Data ── */
+  --curve-bean: #C4704B;
+  --curve-env: #57816C;
+  --curve-ror: #B8860B;
+  --curve-gas: #C05746;
+  --curve-air: #5B7FA5;
+
+  /* ── Text ── */
+  --text: #1C1917;
+  --text-secondary: #57534E;
+  --text-muted: #A8A29E;
+
+  /* ── Spacing ── */
+  --xs: 4px;
+  --sm: 8px;
+  --md: 16px;
+  --lg: 24px;
+  --xl: 32px;
+  --xxl: 48px;
+
+  /* ── Fonts ── */
+  --font-mono: "SF Mono", "Cascadia Code", "Consolas", monospace;
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Zero border-radius everywhere ── */
+*, *::before, *::after {
+  border-radius: 0 !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--panel-border-strong); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Button Reset ── */
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ── Input Reset ── */
+input, textarea, select {
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--text);
+  background: var(--bg);
+}
+
+input:focus, textarea:focus {
+  outline: 1px solid var(--copper);
+}
+
+/* ═══ Utility Classes ═══ */
+
+.surface { background: var(--surface); }
+.border { border: 0.5px solid var(--panel-border); }
+
+.text-copper { color: var(--copper); }
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+
+.font-mono { font-family: var(--font-mono); }
+.font-mono-sm { font-family: var(--font-mono); font-size: 14px; font-weight: 500; }
+.font-mono-xs { font-family: var(--font-mono); font-size: 11px; font-weight: 500; }
+.font-mono-lg { font-family: var(--font-mono); font-size: 28px; font-weight: 700; }
+
+.font-heading { font-size: 16px; font-weight: 500; }
+.font-label { font-size: 12px; font-weight: 500; }
+.font-label-sm { font-size: 11px; }
+.font-caption { font-size: 10px; }
+.font-title { font-size: 20px; font-weight: 600; }
+
+/* ═══ Component Patterns ═══ */
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  padding: var(--xs) var(--md);
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-copper {
+  color: var(--copper);
+  border: 0.5px solid rgba(196, 112, 75, 0.5);
+  padding: var(--xs) var(--sm);
+  font-size: 11px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-copper:hover { background: var(--copper-muted); }
+
+.btn-ghost {
+  color: var(--text-secondary);
+  border: 0.5px solid var(--panel-border);
+  padding: var(--xs) var(--sm);
+  font-size: 11px;
+  transition: background 0.15s;
+}
+.btn-ghost:hover { background: var(--panel-hover); }
+
+.input-field {
+  padding: var(--xs) var(--sm);
+  background: var(--bg);
+  border: 0.5px solid var(--panel-border);
+  font-size: 14px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--copper-muted);
+  color: var(--copper);
+  font-size: 10px;
+}
+
+.divider {
+  height: 0.5px;
+  background: var(--panel-border);
+  width: 100%;
+}

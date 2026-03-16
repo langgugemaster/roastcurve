@@ -1,0 +1,33 @@
+[package]
+name = "roastcurve"
+version = "1.0.0"
+description = "RoastCurve - Professional Coffee Roasting Software"
+authors = ["Samuel"]
+edition = "2021"
+
+[lib]
+name = "roastcurve_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[[bin]]
+name = "roastcurve"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serialport = "4"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+tokio = { version = "1", features = ["full"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
