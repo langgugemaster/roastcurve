@@ -55,6 +55,52 @@ export interface RoastSummary {
   tags: string[];
 }
 
+/** 烘焙事件记录 */
+export interface RoastEventRecord {
+  id: string;
+  event: RoastEvent;
+  time: number;
+  bean_temp: number;
+}
+
+/** 完整烘焙记录（含曲线） */
+export interface Roast {
+  id: string;
+  bean_id: string;
+  bean_name: string;
+  date: string;
+  batch_weight: number;
+  charge_temp: number | null;
+  drop_temp: number | null;
+  total_time: number | null;
+  development_time: number | null;
+  curve_data: CurvePoint[];
+  events: RoastEventRecord[];
+  notes: string;
+  state: string;
+  profile_id: string | null;
+  roast_degree: RoastDegree | null;
+  end_weight: number | null;
+  weight_loss: number | null;
+  cupping_score: number | null;
+  cupping_notes: string;
+  cupping_record: CuppingRecord | null;
+  tags: string[];
+}
+
+/** 生豆库存 */
+export interface GreenBean {
+  id: string;
+  name: string;
+  origin: string;
+  process: string;
+  variety: string;
+  purchase_date: string | null;
+  quantity_kg: number;
+  price_per_kg: number | null;
+  notes: string;
+}
+
 /** 串口信息 */
 export interface PortInfo {
   name: string;

@@ -145,3 +145,17 @@ pub struct RoastSummary {
     pub cupping_score: Option<f64>,
     pub tags: Vec<String>,
 }
+
+/// 生豆库存
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GreenBean {
+    pub id: Uuid,
+    pub name: String,
+    pub origin: String,
+    pub process: String,
+    pub variety: String,
+    pub purchase_date: Option<String>,
+    pub quantity_kg: f64,
+    pub price_per_kg: Option<f64>,
+    pub notes: String,
+}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { RoastSummary, formatDate, formatTime } from "../types/models";
 
-export function HistoryView() {
+export function HistoryView({ onSelectRoast }: { onSelectRoast?: (id: string) => void }) {
   const [roasts, setRoasts] = useState<RoastSummary[]>([]);
   const [search, setSearch] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
@@ -142,7 +142,7 @@ export function HistoryView() {
           </div>
         ) : (
           filtered.map((roast) => (
-            <div key={roast.id}>
+            <div key={roast.id} onClick={() => onSelectRoast?.(roast.id)}>
               <RoastRow roast={roast} />
               <div className="divider" />
             </div>

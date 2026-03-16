@@ -15,9 +15,13 @@ pub fn run() {
         .manage(db)
         .invoke_handler(tauri::generate_handler![
             commands::get_roasts,
+            commands::get_roast,
             commands::save_roast,
             commands::delete_roast,
             commands::list_serial_ports,
+            commands::get_beans,
+            commands::save_bean,
+            commands::delete_bean,
         ])
         .run(tauri::generate_context!())
         .expect("error while running RoastCurve");

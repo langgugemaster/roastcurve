@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, OptionalExtension, Result};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -77,6 +77,18 @@ impl Database {
                 event_type TEXT NOT NULL,
                 elapsed_seconds REAL NOT NULL,
                 bean_temp REAL
+            );
+
+            CREATE TABLE IF NOT EXISTS green_beans (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                origin TEXT DEFAULT '',
+                process TEXT DEFAULT '',
+                variety TEXT DEFAULT '',
+                purchase_date TEXT,
+                quantity_kg REAL DEFAULT 0,
+                price_per_kg REAL,
+                notes TEXT DEFAULT ''
             );
         ",
         )?;
@@ -223,6 +235,145 @@ impl Database {
         conn.execute("DELETE FROM roasting_records WHERE id=?1", params![id])?;
         conn.execute("DELETE FROM curve_data WHERE record_id=?1", params![id])?;
         conn.execute("DELETE FROM roasting_events WHERE record_id=?1", params![id])?;
+        Ok(())
+    }
+
+    pub fn fetch_roast(&self, id: &str) -> Result<Option<Roast>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, bean_id, bean_name, date, batch_weight, charge_temp, drop_temp,
+                    total_time, development_time, notes, state, profile_id,
+                    roast_degree, end_weight, weight_loss, cupping_score, cupping_notes,
+                    tags, cupping_record
+             FROM roasting_records WHERE id=?1",
+        )?;
+
+        let roast = stmt.query_row(params![id], |row| {
+            let tags_json: String = row.get(17)?;
+            let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
+            let cupping_json: Option<String> = row.get(18)?;
+            let cupping_record = cupping_json.and_then(|j| serde_json::from_str(&j).ok());
+            let degree_str: Option<String> = row.get(12)?;
+            let degree = degree_str.and_then(|s| serde_json::from_value(serde_json::Value::String(s)).ok());
+            let state_str: String = row.get(10)?;
+            let state: RoastState = serde_json::from_value(serde_json::Value::String(state_str))
+                .unwrap_or(RoastState::Completed);
+            let profile_str: Option<String> = row.get(11)?;
+
+            Ok(Roast {
+                id: uuid::Uuid::parse_str(&row.get::<_, String>(0)?).unwrap(),
+                bean_id: uuid::Uuid::parse_str(&row.get::<_, String>(1)?).unwrap_or_else(|_| uuid::Uuid::new_v4()),
+                bean_name: row.get(2)?,
+                date: chrono::DateTime::parse_from_rfc3339(&row.get::<_, String>(3)?)
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .unwrap_or_else(|_| chrono::Utc::now()),
+                batch_weight: row.get(4)?,
+                charge_temp: row.get(5)?,
+                drop_temp: row.get(6)?,
+                total_time: row.get(7)?,
+                development_time: row.get(8)?,
+                notes: row.get(9)?,
+                state,
+                profile_id: profile_str.and_then(|s| uuid::Uuid::parse_str(&s).ok()),
+                roast_degree: degree,
+                end_weight: row.get(13)?,
+                weight_loss: row.get(14)?,
+                cupping_score: row.get(15)?,
+                cupping_notes: row.get(16)?,
+                cupping_record,
+                tags,
+                curve_data: Vec::new(),
+                events: Vec::new(),
+            })
+        }).optional()?;
+
+        if let Some(mut roast) = roast {
+            // Load curve data
+            let mut stmt = conn.prepare(
+                "SELECT elapsed_seconds, bt, et, ror, gas, airflow
+                 FROM curve_data WHERE record_id=?1 ORDER BY elapsed_seconds",
+            )?;
+            roast.curve_data = stmt.query_map(params![id], |row| {
+                Ok(CurvePoint {
+                    time: row.get(0)?,
+                    bean_temp: row.get::<_, Option<f64>>(1)?.unwrap_or(0.0),
+                    env_temp: row.get::<_, Option<f64>>(2)?.unwrap_or(0.0),
+                    ror: row.get::<_, Option<f64>>(3)?.unwrap_or(0.0),
+                    gas: row.get::<_, Option<f64>>(4)?.unwrap_or(0.0),
+                    airflow: row.get::<_, Option<f64>>(5)?.unwrap_or(0.0),
+                })
+            })?.collect::<Result<Vec<_>>>()?;
+
+            // Load events
+            let mut stmt = conn.prepare(
+                "SELECT id, event_type, elapsed_seconds, bean_temp
+                 FROM roasting_events WHERE record_id=?1 ORDER BY elapsed_seconds",
+            )?;
+            roast.events = stmt.query_map(params![id], |row| {
+                let event_str: String = row.get(1)?;
+                let event: RoastEvent = serde_json::from_value(serde_json::Value::String(event_str))
+                    .unwrap_or(RoastEvent::Charge);
+                Ok(RoastEventRecord {
+                    id: uuid::Uuid::parse_str(&row.get::<_, String>(0)?).unwrap_or_else(|_| uuid::Uuid::new_v4()),
+                    event,
+                    time: row.get(2)?,
+                    bean_temp: row.get::<_, Option<f64>>(3)?.unwrap_or(0.0),
+                })
+            })?.collect::<Result<Vec<_>>>()?;
+
+            Ok(Some(roast))
+        } else {
+            Ok(None)
+        }
+    }
+
+    // ── 生豆库存 ──
+
+    pub fn fetch_beans(&self) -> Result<Vec<GreenBean>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, origin, process, variety, purchase_date, quantity_kg, price_per_kg, notes
+             FROM green_beans ORDER BY name",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(GreenBean {
+                id: uuid::Uuid::parse_str(&row.get::<_, String>(0)?).unwrap_or_else(|_| uuid::Uuid::new_v4()),
+                name: row.get(1)?,
+                origin: row.get(2)?,
+                process: row.get(3)?,
+                variety: row.get(4)?,
+                purchase_date: row.get(5)?,
+                quantity_kg: row.get(6)?,
+                price_per_kg: row.get(7)?,
+                notes: row.get(8)?,
+            })
+        })?;
+        rows.collect()
+    }
+
+    pub fn save_bean(&self, bean: &GreenBean) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO green_beans (id, name, origin, process, variety, purchase_date, quantity_kg, price_per_kg, notes)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
+            params![
+                bean.id.to_string(),
+                bean.name,
+                bean.origin,
+                bean.process,
+                bean.variety,
+                bean.purchase_date,
+                bean.quantity_kg,
+                bean.price_per_kg,
+                bean.notes,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_bean(&self, id: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM green_beans WHERE id=?1", params![id])?;
         Ok(())
     }
 }
