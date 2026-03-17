@@ -16,15 +16,23 @@ export function HistoryView({ onSelectRoast }: { onSelectRoast?: (id: string) =>
       const data = await invoke<RoastSummary[]>("get_roasts");
       setRoasts(data);
     } catch {
-      // Not in Tauri context (dev mode without backend)
       setRoasts([]);
     }
   }
 
-  // All unique tags
+  async function handleDelete(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    if (!confirm("确定删除这条烘焙记录？")) return;
+    try {
+      await invoke("delete_roast", { id });
+      loadRoasts();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  }
+
   const allTags = Array.from(new Set(roasts.flatMap((r) => r.tags))).sort();
 
-  // Filtered roasts
   const filtered = roasts.filter((r) => {
     if (filterTag && !r.tags.includes(filterTag)) return false;
     if (!search) return true;
@@ -143,7 +151,7 @@ export function HistoryView({ onSelectRoast }: { onSelectRoast?: (id: string) =>
         ) : (
           filtered.map((roast) => (
             <div key={roast.id} onClick={() => onSelectRoast?.(roast.id)}>
-              <RoastRow roast={roast} />
+              <RoastRow roast={roast} onDelete={handleDelete} />
               <div className="divider" />
             </div>
           ))
@@ -153,7 +161,7 @@ export function HistoryView({ onSelectRoast }: { onSelectRoast?: (id: string) =>
   );
 }
 
-function RoastRow({ roast }: { roast: RoastSummary }) {
+function RoastRow({ roast, onDelete }: { roast: RoastSummary; onDelete: (e: React.MouseEvent, id: string) => void }) {
   return (
     <div
       style={{
@@ -234,6 +242,14 @@ function RoastRow({ roast }: { roast: RoastSummary }) {
             {Math.round(roast.cupping_score)}分
           </span>
         )}
+        <button
+          onClick={(e) => onDelete(e, roast.id)}
+          className="btn-ghost"
+          style={{ fontSize: 11, color: "var(--text-muted)", padding: "2px 6px" }}
+          title="删除"
+        >
+          ✕
+        </button>
         <span style={{ fontSize: 10, color: "var(--text-muted)" }}>›</span>
       </div>
     </div>

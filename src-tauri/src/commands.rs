@@ -53,17 +53,26 @@ pub fn delete_bean(db: State<Database>, id: String) -> Result<(), String> {
     db.delete_bean(&id).map_err(|e| e.to_string())
 }
 
-/// Tauri 命令：开始烘焙（模拟模式）
+/// Tauri 命令：开始烘焙
 #[tauri::command]
 pub fn start_roast(
     session: State<RoastSession>,
     app: AppHandle,
     charge_temp: f64,
+    serial_port: Option<String>,
+    baud_rate: Option<u32>,
 ) -> Result<(), String> {
     if session.is_running() {
         return Err("烘焙正在进行中".to_string());
     }
-    session.start(app, charge_temp);
+    match serial_port {
+        Some(port) if !port.is_empty() => {
+            session.start_serial(app, port, baud_rate.unwrap_or(115200));
+        }
+        _ => {
+            session.start_simulated(app, charge_temp);
+        }
+    }
     Ok(())
 }
 
@@ -97,7 +106,7 @@ pub fn finish_roast(
 ) -> Result<String, String> {
     session.stop();
 
-    let (elapsed, last_bt, _) = session.get_current();
+    let (elapsed, _last_bt, _) = session.get_current();
     let curve_data = session.get_curve_data();
     let events = session.get_events();
 

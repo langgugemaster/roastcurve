@@ -53,8 +53,10 @@ export function RoastDashboard() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [sensorError, setSensorError] = useState("");
 
   const unlistenRef = useRef<UnlistenFn | null>(null);
+  const unlistenErrorRef = useRef<UnlistenFn | null>(null);
 
   // Listen to sensor readings
   useEffect(() => {
@@ -78,9 +80,18 @@ export function RoastDashboard() {
       unlistenRef.current = unlisten;
     });
 
+    listen<string>("sensor-error", (e) => {
+      if (!mounted) return;
+      setSensorError(e.payload);
+      setRunning(false);
+    }).then(unlisten => {
+      unlistenErrorRef.current = unlisten;
+    });
+
     return () => {
       mounted = false;
       unlistenRef.current?.();
+      unlistenErrorRef.current?.();
     };
   }, []);
 
@@ -92,7 +103,13 @@ export function RoastDashboard() {
     setShowSave(false);
     setSaved(false);
     try {
-      await invoke("start_roast", { chargeTemp });
+      const serialPort = localStorage.getItem("rc_port") || "";
+      const baudRate = Number(localStorage.getItem("rc_baud")) || 115200;
+      await invoke("start_roast", {
+        chargeTemp,
+        serialPort: serialPort || null,
+        baudRate,
+      });
       setRunning(true);
     } catch (e) {
       console.error("Start failed:", e);
@@ -254,8 +271,15 @@ export function RoastDashboard() {
                     输入豆名和参数，然后点击「开始烘焙」
                   </div>
                   <div className="font-caption text-muted" style={{ marginTop: "var(--md)" }}>
-                    当前为模拟模式 · 可在设置中配置串口传感器
+                    {localStorage.getItem("rc_port")
+                      ? `串口模式: ${localStorage.getItem("rc_port")}`
+                      : "模拟模式 · 可在设置中配置串口传感器"}
                   </div>
+                  {sensorError && (
+                    <div className="font-label-sm" style={{ marginTop: "var(--sm)", color: "var(--danger)" }}>
+                      {sensorError}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

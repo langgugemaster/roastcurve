@@ -176,3 +176,29 @@ input:focus, textarea:focus {
   background: var(--panel-border);
   width: 100%;
 }
+
+/* ═══ Animations ═══ */
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ═══ Selection & Focus ═══ */
+
+::selection {
+  background: var(--copper-muted);
+  color: var(--text);
+}
+
+/* ═══ Table ═══ */
+
+table { border-spacing: 0; }
+th, td { text-align: left; }
+
+/* ═══ Checkbox ═══ */
+
+input[type="checkbox"] {
+  accent-color: var(--copper);
+  cursor: pointer;
+}

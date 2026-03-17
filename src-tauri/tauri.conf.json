@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/nicegram/nicegram-tauri/refs/heads/main/crates/tauri-utils/schema.json",
   "productName": "RoastCurve",
   "version": "1.0.0",
-  "identifier": "com.roastcurve.app",
+  "identifier": "com.roastcurve.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -32,7 +32,9 @@
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
-      "icons/128x128@2x.png"
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
     ]
   },
   "plugins": {
