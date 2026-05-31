@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegram/nicegram-tauri/refs/heads/main/crates/tauri-utils/schema.json",
   "productName": "RoastCurve",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.roastcurve.desktop",
   "build": {
     "frontendDist": "../dist",

@@ -1,6 +1,6 @@
 [package]
 name = "roastcurve"
-version = "1.0.0"
+version = "1.0.1"
 description = "RoastCurve - Professional Coffee Roasting Software"
 authors = ["Samuel"]
 edition = "2021"
