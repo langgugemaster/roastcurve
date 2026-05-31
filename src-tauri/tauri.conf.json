@@ -35,14 +35,9 @@
       "icons/128x128@2x.png",
       "icons/icon.png",
       "icons/icon.ico"
-    ]
-  },
-  "plugins": {
-    "dialog": {},
-    "fs": {
-      "scope": {
-        "allow": ["**"]
-      }
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
     }
   }
 }
